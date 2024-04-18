@@ -1,0 +1,9 @@
+# Ignore log files
+*.log
+
+# Ignore build output
+/bin/
+
+# Ignore temporary files
+*.tmp
+
