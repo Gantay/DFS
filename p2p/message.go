@@ -4,7 +4,7 @@ import "net"
 
 // Message holds any arbitrary data that is sent over the
 // each transport between two node ion the network.
-type Message struct {
+type RPC struct {
 	From    net.Addr
 	Payload []byte
 }
