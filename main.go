@@ -7,12 +7,18 @@ import (
 	"github.com/Gantay/DFS/p2p"
 )
 
+func OnPeer(peer p2p.Peer) error {
+	peer.Close()
+	return nil
+}
+
 func main() {
 
 	tcpOpts := p2p.TCPTransportOps{
 		ListenAddr:    ":3000",
 		HandshakeFunc: p2p.NOPHandShakeFunc,
 		Decoder:       p2p.DefaultDecoder{},
+		OnPeer:        OnPeer,
 	}
 
 	tr := p2p.NewTCPTransport(tcpOpts)
