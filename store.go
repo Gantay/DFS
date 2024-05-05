@@ -6,10 +6,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"strings"
 )
+
+const DefualtRootFolderName = "ggNetwork"
 
 func CASPathTransformFunc(key string) PathKey {
 	hash := sha1.Sum([]byte(key))
@@ -39,17 +42,30 @@ type PathKey struct {
 	Filename string
 }
 
+func (p PathKey) FirstPathNmae() string {
+	paths := strings.Split(p.PathName, "/")
+	if len(paths) == 0 {
+		return ""
+	}
+	return paths[0]
+}
+
 func (p PathKey) FullPath() string {
 	return fmt.Sprintf("%s%s", p.PathName, p.Filename)
 
 }
 
 type StoreOpts struct {
+	//Root is the folder name of the root, containing all the folders of the system. dummy
+	Root              string
 	PathTransformFunc PathTransformFunc
 }
 
-var DefaultPathTransformFunc = func(key string) string {
-	return key
+var DefaultPathTransformFunc = func(key string) PathKey {
+	return PathKey{
+		PathName: key,
+		Filename: key,
+	}
 }
 
 type Store struct {
@@ -57,6 +73,12 @@ type Store struct {
 }
 
 func NewStore(opts StoreOpts) *Store {
+	if opts.PathTransformFunc == nil {
+		opts.PathTransformFunc = DefaultPathTransformFunc
+	}
+	if len(opts.Root) == 0 {
+		opts.Root = DefualtRootFolderName
+	}
 	return &Store{
 		StoreOpts: opts,
 	}
@@ -68,6 +90,31 @@ func (s *Store) readStream(key string) (io.ReadCloser, error) {
 	return os.Open(pathKey.FullPath())
 
 }
+
+func (s *Store) Has(key string) bool {
+	pathKey := s.PathTransformFunc(key)
+
+	_, err := os.Stat(pathKey.PathName)
+	if err == fs.ErrNotExist {
+		return false
+	}
+	return true
+}
+
+func (s *Store) Delete(key string) error {
+	pathKey := s.PathTransformFunc(key)
+
+	defer func() {
+		log.Printf("deleted [%s] from disk.", pathKey.Filename)
+	}()
+	//	if err := os.RemoveAll(pathKey.FullPath()); err != nil {
+	//		return nil
+	//	}
+
+	return os.RemoveAll(pathKey.FirstPathNmae())
+
+}
+
 func (s *Store) Read(key string) (io.Reader, error) {
 	f, err := s.readStream(key)
 	if err != nil {
