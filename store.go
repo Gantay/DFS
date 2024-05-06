@@ -87,8 +87,9 @@ func NewStore(opts StoreOpts) *Store {
 
 func (s *Store) Has(key string) bool {
 	pathKey := s.PathTransformFunc(key)
+	fullPathWithRoot := fmt.Sprintf("%s/%s", s.Root, pathKey.FullPath())
 
-	_, err := os.Stat(pathKey.PathName)
+	_, err := os.Stat(fullPathWithRoot)
 	if errors.Is(err, os.ErrNotExist) {
 		return false
 	}
@@ -101,8 +102,9 @@ func (s *Store) Delete(key string) error {
 	defer func() {
 		log.Printf("deleted [%s] from disk.", pathKey.Filename)
 	}()
+	firstPathNameWithRoot := fmt.Sprintf("%s/%s", s.Root, pathKey.FirstPathNmae())
 
-	return os.RemoveAll(pathKey.FirstPathNmae())
+	return os.RemoveAll(firstPathNameWithRoot)
 
 }
 
