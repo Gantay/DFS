@@ -1,39 +1,16 @@
 package main
 
-import (
-	"fmt"
-	"log"
-
-	"github.com/Gantay/DFS/p2p"
-)
-
-func OnPeer(peer p2p.Peer) error {
-	peer.Close()
-	return nil
-}
+import "github.com/Gantay/DFS/p2p"
 
 func main() {
+	tcpTransportOpts := p2p.TCPTransportOps{}
+	tcpTransport := p2p.NewTCPTransport()
 
-	tcpOpts := p2p.TCPTransportOps{
-		ListenAddr:    ":3000",
-		HandshakeFunc: p2p.NOPHandShakeFunc,
-		Decoder:       p2p.DefaultDecoder{},
-		OnPeer:        OnPeer,
+	fileServerOpts := FileServerOpts{
+		ListenAddr:        "3000",
+		StorageRoot:       "3000_network",
+		PathTransformFunc: CASPathTransformFunc,
 	}
-
-	tr := p2p.NewTCPTransport(tcpOpts)
-
-	go func() {
-		for {
-			msg := <-tr.Consume()
-			fmt.Printf("%+v\n", msg)
-		}
-	}()
-
-	if err := tr.ListenAndAccept(); err != nil {
-		log.Fatal(err)
-	}
-
-	select {}
+	s := NewFileServer()
 
 }
