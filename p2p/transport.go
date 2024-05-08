@@ -11,5 +11,5 @@ type Peer interface {
 type Transport interface {
 	ListenAndAccept() error
 	//This will listen for anything and everything!!!!
-	consume() <-chan RPC
+	Consume() <-chan RPC
 }

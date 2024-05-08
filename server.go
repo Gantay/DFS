@@ -1,9 +1,10 @@
 package main
 
-import "github.com/Gantay/DFS/p2p"
+import (
+	"github.com/Gantay/DFS/p2p"
+)
 
 type FileServerOpts struct {
-	ListenAddr        string
 	StorageRoot       string
 	PathTransformFunc PathTransformFunc
 	Transport         p2p.Transport
