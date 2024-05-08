@@ -12,4 +12,5 @@ type Transport interface {
 	ListenAndAccept() error
 	//This will listen for anything and everything!!!!
 	Consume() <-chan RPC
+	Close() error
 }

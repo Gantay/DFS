@@ -55,6 +55,11 @@ func (t *TCPtransport) Consume() <-chan RPC {
 
 }
 
+// Close implements the Transport interface.
+func (t *TCPtransport) Close() error {
+	return t.listner.Close()
+}
+
 func (t *TCPtransport) ListenAndAccept() error {
 	var err error
 
