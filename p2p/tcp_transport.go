@@ -1,6 +1,7 @@
 package p2p
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -60,6 +61,21 @@ func (t *TCPtransport) Close() error {
 	return t.listner.Close()
 }
 
+// Dial implements the Transport interface.
+func (t *TCPtransport) Dial(addr string) error {
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return nil
+
+	}
+	fmt.Println(conn)
+
+	go t.handleconn(conn, true)
+
+	return nil
+
+}
+
 func (t *TCPtransport) ListenAndAccept() error {
 	var err error
 
@@ -79,15 +95,20 @@ func (t *TCPtransport) ListenAndAccept() error {
 func (t *TCPtransport) startAcceptLoop() {
 	for {
 		conn, err := t.listner.Accept()
+		if errors.Is(err, net.ErrClosed) {
+			return
+		}
 		if err != nil {
 			fmt.Printf("TCP accept error %s\n", err)
 		}
+
 		fmt.Printf("New incomming connection big-W: %+v\n", conn)
-		go t.handleconn(conn)
+
+		go t.handleconn(conn, false)
 	}
 }
 
-func (t *TCPtransport) handleconn(conn net.Conn) {
+func (t *TCPtransport) handleconn(conn net.Conn, outBound bool) {
 	var err error
 
 	defer func() {
@@ -95,7 +116,7 @@ func (t *TCPtransport) handleconn(conn net.Conn) {
 		conn.Close()
 	}()
 
-	peer := NewTCPPeer(conn, true)
+	peer := NewTCPPeer(conn, outBound)
 
 	if err := t.HandshakeFunc(peer); err != nil {
 		fmt.Printf("TCP hanshake error: %s\n", err)
