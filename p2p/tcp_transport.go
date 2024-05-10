@@ -65,7 +65,7 @@ func (t *TCPtransport) Close() error {
 func (t *TCPtransport) Dial(addr string) error {
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
-		return nil
+		return err
 
 	}
 	fmt.Println(conn)

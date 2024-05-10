@@ -55,13 +55,18 @@ func (s *FileServer) loop() {
 
 func (s *FileServer) bootStrapNetwork() error {
 	for _, addr := range s.BootStrapNodes {
-		fmt.Println("attempting to connect with remote:", addr)
-		//go func(addr string) {
-		if err := s.Transport.Dial(addr); err != nil {
-			panic(err)
-			log.Println("dial error:", err)
+		if len(addr) == 0 {
+			continue
 		}
-		//	}(addr)
+
+		fmt.Println("attempting to connect with remote:", addr)
+		go func(addr string) {
+			if err := s.Transport.Dial(addr); err != nil {
+
+				log.Println("dial error:", err)
+
+			}
+		}(addr)
 	}
 	return nil
 }
@@ -71,7 +76,10 @@ func (s *FileServer) Start() error {
 		return err
 	}
 
-	s.bootStrapNetwork()
+	if len(s.BootStrapNodes) != 0 {
+
+		s.bootStrapNetwork()
+	}
 
 	s.loop()
 

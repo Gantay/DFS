@@ -6,9 +6,9 @@ import (
 	"github.com/Gantay/DFS/p2p"
 )
 
-func main() {
+func makeServer(listenAddr string, nodes ...string) *FileServer {
 	tcpTransportOpts := p2p.TCPTransportOps{
-		ListenAddr:    ":3000",
+		ListenAddr:    listenAddr,
 		HandshakeFunc: p2p.NOPHandShakeFunc,
 		Decoder:       p2p.DefaultDecoder{},
 		//TODO: OnPeer func
@@ -16,20 +16,24 @@ func main() {
 	tcpTransport := p2p.NewTCPTransport(tcpTransportOpts)
 
 	fileServerOpts := FileServerOpts{
-		StorageRoot:       "3000_network",
+		StorageRoot:       listenAddr + "_network",
 		PathTransformFunc: CASPathTransformFunc,
 		Transport:         tcpTransport,
-		BootStrapNodes:    []string{":4000"},
+		BootStrapNodes:    nodes,
 	}
-	s := NewFileServer(fileServerOpts)
+	return NewFileServer(fileServerOpts)
 
-	// go func() {
-	// 	time.Sleep(time.Second * 3)
-	// 	s.Stop()
-	// }()
+}
 
-	if err := s.Start(); err != nil {
-		log.Fatal(err)
-	}
+func main() {
+
+	s1 := makeServer(":3000", "")
+	s2 := makeServer(":4000", ":3000")
+
+	go func() {
+		log.Fatal(s1.Start())
+
+	}()
+	s2.Start()
 
 }
