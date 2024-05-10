@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/Gantay/DFS/p2p"
 )
@@ -17,6 +18,9 @@ type FileServerOpts struct {
 type FileServer struct {
 	FileServerOpts
 
+	peerLock sync.Mutex
+	peers    map[string]p2p.Peer
+
 	store  *Store
 	quitch chan struct{}
 }
@@ -30,12 +34,15 @@ func NewFileServer(opts FileServerOpts) *FileServer {
 		FileServerOpts: opts,
 		store:          NewStore(storeOpts),
 		quitch:         make(chan struct{}),
+		peers:          make(map[string]p2p.Peer),
 	}
 }
 
 func (s *FileServer) Stop() {
 	close(s.quitch)
 }
+
+func (s *FileServer) OnPeer()
 
 func (s *FileServer) loop() {
 	defer func() {
