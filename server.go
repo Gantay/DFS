@@ -42,7 +42,10 @@ func (s *FileServer) Stop() {
 	close(s.quitch)
 }
 
-func (s *FileServer) OnPeer()
+func (s *FileServer) OnPeer(P p2p.Peer) error {
+	s.peerLock.Lock()
+	defer 
+}
 
 func (s *FileServer) loop() {
 	defer func() {
