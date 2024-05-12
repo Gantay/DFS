@@ -42,9 +42,15 @@ func (s *FileServer) Stop() {
 	close(s.quitch)
 }
 
-func (s *FileServer) OnPeer(P p2p.Peer) error {
+func (s *FileServer) OnPeer(p p2p.Peer) error {
 	s.peerLock.Lock()
-	defer 
+	defer s.peerLock.Unlock()
+
+	s.peers[p.RemoteAddr().String()] = p
+
+	log.Printf("Connected with remote %s", p)
+
+	return nil
 }
 
 func (s *FileServer) loop() {
