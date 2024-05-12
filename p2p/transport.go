@@ -6,6 +6,7 @@ import (
 
 // Peer is an interface that represents the remot node
 type Peer interface {
+	Coon() net.Conn
 	Send([]byte) error
 	RemoteAddr() net.Addr
 	Close() error

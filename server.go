@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/gob"
 	"fmt"
+	"io"
+
 	"log"
 	"sync"
 
@@ -36,6 +39,24 @@ func NewFileServer(opts FileServerOpts) *FileServer {
 		quitch:         make(chan struct{}),
 		peers:          make(map[string]p2p.Peer),
 	}
+}
+
+type Payload struct {
+	Key  string
+	Data []byte
+}
+
+func (s *FileServer) broadCast(p Payload) error {
+	return gob.NewEncoder(p.Coon()).Encode(p)
+
+	return nil
+}
+
+func (s *FileServer) StoreData(key string, r io.Reader) error {
+	// 1.Store this file to disk.
+	// 2.Broadcast this file to all known peers in the network.
+
+	return nil
 }
 
 func (s *FileServer) Stop() {

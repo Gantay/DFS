@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"log"
 
 	"github.com/Gantay/DFS/p2p"
@@ -39,5 +40,9 @@ func main() {
 
 	}()
 	s2.Start()
+
+	data := bytes.NewReader([]byte("my big data file here!"))
+
+	s2.StoreFile("myprivatedata", data)
 
 }
