@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/gob"
 	"fmt"
 	"io"
@@ -41,22 +42,43 @@ func NewFileServer(opts FileServerOpts) *FileServer {
 	}
 }
 
+func (s *FileServer) broadCast(p *Payload) error {
+	peers := []io.Writer{}
+	for _, peer := range s.peers {
+		peers = append(peers, peer)
+	}
+
+	mw := io.MultiWriter(peers...)
+	return gob.NewEncoder(mw).Encode(p)
+}
+
 type Payload struct {
 	Key  string
 	Data []byte
-}
-
-func (s *FileServer) broadCast(p Payload) error {
-	return gob.NewEncoder(p.Coon()).Encode(p)
-
-	return nil
 }
 
 func (s *FileServer) StoreData(key string, r io.Reader) error {
 	// 1.Store this file to disk.
 	// 2.Broadcast this file to all known peers in the network.
 
-	return nil
+	if err := s.store.Write(key, r); err != nil {
+		return err
+	}
+
+	buf := new(bytes.Buffer)
+	_, err := io.Copy(buf, r)
+	if err != nil {
+		return nil
+	}
+
+	p := &Payload{
+		Key:  key,
+		Data: buf.Bytes(),
+	}
+
+	fmt.Println(buf.Bytes())
+
+	return s.broadCast(p)
 }
 
 func (s *FileServer) Stop() {
@@ -83,7 +105,11 @@ func (s *FileServer) loop() {
 	for {
 		select {
 		case msg := <-s.Transport.Consume():
-			fmt.Println(msg)
+			fmt.Println("recv mag")
+			var p Payload
+			if err := gob.NewDecoder(bytes.NewReader(msg.Payload)).Decode(&p); err != nil {
+				log.Fatal(err)
+			}
 		case <-s.quitch:
 			return
 		}
