@@ -42,17 +42,22 @@ func NewFileServer(opts FileServerOpts) *FileServer {
 	}
 }
 
-func (s *FileServer) broadCast(p *Payload) error {
+func (s *FileServer) broadCast(msg *DataMessage) error {
 	peers := []io.Writer{}
 	for _, peer := range s.peers {
 		peers = append(peers, peer)
 	}
 
 	mw := io.MultiWriter(peers...)
-	return gob.NewEncoder(mw).Encode(p)
+	return gob.NewEncoder(mw).Encode(msg)
 }
 
-type Payload struct {
+type Message struct {
+	From    string
+	Payload any
+}
+
+type DataMessage struct {
 	Key  string
 	Data []byte
 }
@@ -67,14 +72,16 @@ func (s *FileServer) StoreData(key string, r io.Reader) error {
 		return err
 	}
 
-	p := &Payload{
+	p := &DataMessage{
 		Key:  key,
 		Data: buf.Bytes(),
 	}
 
-	fmt.Println(buf.Bytes())
+	//fmt.Println(buf.Bytes())
 
-	return s.broadCast(p)
+	return s.broadCast(&Message{
+		From: ,
+	})
 }
 
 func (s *FileServer) Stop() {
@@ -87,7 +94,7 @@ func (s *FileServer) OnPeer(p p2p.Peer) error {
 
 	s.peers[p.RemoteAddr().String()] = p
 
-	log.Printf("Connected with remote %s", p)
+	log.Printf("Connected with remote %s", p.RemoteAddr())
 
 	return nil
 }
@@ -106,12 +113,14 @@ func (s *FileServer) loop() {
 			if err := gob.NewDecoder(bytes.NewReader(msg.Payload)).Decode(&p); err != nil {
 				log.Fatal(err)
 			}
-			fmt.Printf("%+v\n", p)
+			fmt.Printf("%+v\n", string(p.Data))
 		case <-s.quitch:
 			return
 		}
 	}
 }
+
+func (s *FileServer) handleMessage(p *Payload) error {}
 
 func (s *FileServer) bootStrapNetwork() error {
 	for _, addr := range s.BootStrapNodes {
@@ -119,8 +128,8 @@ func (s *FileServer) bootStrapNetwork() error {
 			continue
 		}
 
-		fmt.Println("attempting to connect with remote:", addr)
 		go func(addr string) {
+			fmt.Println("attempting to connect with remote:", addr)
 			if err := s.Transport.Dial(addr); err != nil {
 
 				log.Println("dial error:", err)
@@ -136,10 +145,7 @@ func (s *FileServer) Start() error {
 		return err
 	}
 
-	if len(s.BootStrapNodes) != 0 {
-
-		s.bootStrapNetwork()
-	}
+	s.bootStrapNetwork()
 
 	s.loop()
 
