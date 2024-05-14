@@ -60,15 +60,11 @@ type Payload struct {
 func (s *FileServer) StoreData(key string, r io.Reader) error {
 	// 1.Store this file to disk.
 	// 2.Broadcast this file to all known peers in the network.
-
-	if err := s.store.Write(key, r); err != nil {
-		return err
-	}
-
 	buf := new(bytes.Buffer)
-	_, err := io.Copy(buf, r)
-	if err != nil {
-		return nil
+	tee := io.TeeReader(r, buf)
+
+	if err := s.store.Write(key, tee); err != nil {
+		return err
 	}
 
 	p := &Payload{
@@ -110,7 +106,7 @@ func (s *FileServer) loop() {
 			if err := gob.NewDecoder(bytes.NewReader(msg.Payload)).Decode(&p); err != nil {
 				log.Fatal(err)
 			}
-			fmt.Printf("%v\n", p)
+			fmt.Printf("%+v\n", p)
 		case <-s.quitch:
 			return
 		}
