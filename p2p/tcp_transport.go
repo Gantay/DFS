@@ -27,6 +27,7 @@ func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
 func (p *TCPPeer) Send(b []byte) error {
 	_, err := p.Conn.Write(b)
 	return err
+
 }
 
 type TCPTransportOps struct {
