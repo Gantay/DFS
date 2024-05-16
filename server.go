@@ -42,7 +42,7 @@ func NewFileServer(opts FileServerOpts) *FileServer {
 	}
 }
 
-func (s *FileServer) broadCast(msg *DataMessage) error {
+func (s *FileServer) broadCast(msg *Message) error {
 	peers := []io.Writer{}
 	for _, peer := range s.peers {
 		peers = append(peers, peer)
@@ -77,10 +77,9 @@ func (s *FileServer) StoreData(key string, r io.Reader) error {
 		Data: buf.Bytes(),
 	}
 
-	//fmt.Println(buf.Bytes())
-
 	return s.broadCast(&Message{
-		From: ,
+		From:    "todo",
+		Payload: p,
 	})
 }
 
@@ -109,18 +108,28 @@ func (s *FileServer) loop() {
 		select {
 		case msg := <-s.Transport.Consume():
 
-			var p Payload
-			if err := gob.NewDecoder(bytes.NewReader(msg.Payload)).Decode(&p); err != nil {
-				log.Fatal(err)
+			var m Message
+			if err := gob.NewDecoder(bytes.NewReader(msg.Payload)).Decode(&m); err != nil {
+				log.Println(err)
 			}
-			fmt.Printf("%+v\n", string(p.Data))
+
+			if err := s.handleMessage(&m); err != nil {
+				log.Println(err)
+			}
+
 		case <-s.quitch:
 			return
 		}
 	}
 }
 
-func (s *FileServer) handleMessage(p *Payload) error {}
+func (s *FileServer) handleMessage(msg *Message) error {
+	switch v := msg.Payload.(type) {
+	case *DataMessage:
+		fmt.Printf("received data %+v\n", v)
+	}
+	return nil
+}
 
 func (s *FileServer) bootStrapNetwork() error {
 	for _, addr := range s.BootStrapNodes {
