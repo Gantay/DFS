@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 )
 
 // TCPPeer represents the remote node over a TCP established connection.
@@ -15,12 +16,15 @@ type TCPPeer struct {
 	//if we dial and retrieve a conn => bool == true
 	//if we  accept and retrieve a conn => bool == false
 	outbound bool
+
+	Wg *sync.WaitGroup
 }
 
 func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
 	return &TCPPeer{
 		Conn:     conn,
 		outbound: outbound,
+		Wg:       &sync.WaitGroup{},
 	}
 }
 
@@ -139,9 +143,12 @@ func (t *TCPtransport) handleconn(conn net.Conn, outBound bool) {
 			return
 		}
 
-		rpc.From = conn.RemoteAddr()
-
+		rpc.From = conn.RemoteAddr().String()
+		peer.Wg.Add(1)
+		fmt.Println("waiting till steam is done")
 		t.rpcch <- rpc
+		peer.Wg.Wait()
+		fmt.Println("steam done continueing normal read loop")
 
 	}
 }
