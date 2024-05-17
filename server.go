@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"io"
+	"time"
 
 	"log"
 	"sync"
@@ -74,6 +75,8 @@ func (s *FileServer) StoreData(key string, r io.Reader) error {
 		}
 	}
 
+	time.Sleep(time.Second * 3)
+
 	payload := []byte("THIS LARGE FILE")
 	for _, peer := range s.peers {
 		if err := peer.Send(payload); err != nil {
@@ -139,7 +142,6 @@ func (s *FileServer) loop() {
 			if _, err := peer.Read(b); err != nil {
 				panic(err)
 			}
-			panic("ddd")
 
 			fmt.Printf("recv: %s\n", string(msg.Payload.([]byte)))
 
