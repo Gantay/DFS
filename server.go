@@ -132,6 +132,7 @@ func (s *FileServer) loop() {
 			if err := gob.NewDecoder(bytes.NewReader(rpc.Payload)).Decode(&msg); err != nil {
 				log.Println(err)
 			}
+			fmt.Printf("recv: %s\n", string(msg.Payload.([]byte)))
 
 			peer, ok := s.peers[rpc.From]
 			if !ok {
@@ -143,7 +144,9 @@ func (s *FileServer) loop() {
 				panic(err)
 			}
 
-			fmt.Printf("recv: %s\n", string(msg.Payload.([]byte)))
+			fmt.Printf(" %s\n", string(b))
+
+			peer.(*p2p.TCPPeer).Wg.Done()
 
 			// if err := s.handleMessage(&m); err != nil {
 			// 	log.Println(err)
