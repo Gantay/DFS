@@ -64,7 +64,6 @@ type MessageStoreFile struct {
 func (s *FileServer) StoreData(key string, r io.Reader) error {
 	buf := new(bytes.Buffer)
 	tee := io.TeeReader(r, buf)
-
 	size, err := s.store.Write(key, tee)
 	if err != nil {
 		return err
@@ -94,6 +93,7 @@ func (s *FileServer) StoreData(key string, r io.Reader) error {
 		if err != nil {
 			return err
 		}
+
 		fmt.Println("received and written bytes to disk :", n)
 
 	}
