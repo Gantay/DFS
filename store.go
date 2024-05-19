@@ -159,5 +159,5 @@ func (s *Store) writeStream(key string, r io.Reader) (int64, error) {
 
 	log.Printf("Writen (%d) bytes to disk: %s", n, fullPathWithRoot)
 
-	return 0, nil
+	return n, nil
 }
