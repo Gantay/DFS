@@ -96,12 +96,11 @@ func (s *FileServer) Get(key string) (io.Reader, error) {
 		return nil, err
 	}
 
-	time.Sleep(time.Second * 3)
-
 	for _, peer := range s.peers {
 		fmt.Println("receiving stream from peer:", peer.RemoteAddr())
+
 		filebuffer := new(bytes.Buffer)
-		n, err := io.Copy(filebuffer, peer)
+		n, err := io.CopyN(filebuffer, peer, 22)
 		if err != nil {
 			return nil, err
 		}
