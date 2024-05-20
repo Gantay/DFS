@@ -17,15 +17,19 @@ type TCPPeer struct {
 	//if we  accept and retrieve a conn => bool == false
 	outbound bool
 
-	Wg *sync.WaitGroup
+	wg *sync.WaitGroup
 }
 
 func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
 	return &TCPPeer{
 		Conn:     conn,
 		outbound: outbound,
-		Wg:       &sync.WaitGroup{},
+		wg:       &sync.WaitGroup{},
 	}
+}
+
+func (p *TCPPeer) CloseStream() {
+	p.wg.Done()
 }
 
 func (p *TCPPeer) Send(b []byte) error {
@@ -50,8 +54,14 @@ type TCPtransport struct {
 func NewTCPTransport(opts TCPTransportOps) *TCPtransport {
 	return &TCPtransport{
 		TCPTransportOps: opts,
-		rpcch:           make(chan RPC),
+		rpcch:           make(chan RPC, 1024),
 	}
+}
+
+// Addr implements the Transport interface returnin the addres
+// of the address is accepting connection.
+func (t *TCPtransport) Addr() string {
+	return t.ListenAddr
 }
 
 // consume implements the Transport interface, which will return read-only channel.
@@ -136,19 +146,24 @@ func (t *TCPtransport) handleconn(conn net.Conn, outBound bool) {
 
 	// Read loop
 	// reading from conn
-	rpc := RPC{}
+
 	for {
+		rpc := RPC{}
 		err = t.Decoder.Decode(conn, &rpc)
 		if err != nil {
 			return
 		}
-
 		rpc.From = conn.RemoteAddr().String()
-		peer.Wg.Add(1)
-		fmt.Println("waiting till steam is done")
+
+		if rpc.Stream {
+			peer.wg.Add(1)
+			fmt.Printf("[%s] incoming stream watting...\n", conn.RemoteAddr())
+			peer.wg.Wait()
+			fmt.Printf("[%s] stream closed, resuming read loop\n", conn.RemoteAddr())
+			continue
+		}
+
 		t.rpcch <- rpc
-		peer.Wg.Wait()
-		fmt.Println("steam done continueing normal read loop")
 
 	}
 }
