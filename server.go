@@ -84,11 +84,11 @@ type MessageGetFile struct {
 func (s *FileServer) Get(key string) (io.Reader, error) {
 	if s.store.Has(key) {
 		fmt.Printf("[%s] serving file (%s) from local disk\n", s.Transport.Addr(), key)
-
-		return s.store.Read(key)
+		_, r, err := s.store.Read(key)
+		return r, err
 	}
 
-	fmt.Printf("[%s] dont have file (%S) locally, fetching from network...\n", s.Transport.Addr(), key)
+	fmt.Printf("[%s] dont have file (%s) locally, fetching from network...\n", s.Transport.Addr(), key)
 
 	msg := Message{
 		Payload: MessageGetFile{
@@ -117,7 +117,8 @@ func (s *FileServer) Get(key string) (io.Reader, error) {
 		peer.CloseStream()
 	}
 
-	return s.store.Read(key)
+	_, r, err := s.store.Read(key)
+	return r, err
 
 }
 
@@ -217,10 +218,15 @@ func (s *FileServer) handleMessageGetFile(from string, msg MessageGetFile) error
 		return fmt.Errorf("[%s] neet to serve file (%s) but it does not exist on disk", s.Transport.Addr(), msg.Key)
 	}
 
-	fmt.Printf("[$s] serving file (%S) over the network\n", s.Transport.Addr(), msg.Key)
-	r, err := s.store.Read(msg.Key)
+	fmt.Printf("[%s] serving file (%s) over the network\n", s.Transport.Addr(), msg.Key)
+	fileSize, r, err := s.store.Read(msg.Key)
 	if err != nil {
 		return err
+	}
+
+	if rc, ok := r.(io.ReadCloser); ok {
+		fmt.Println("closing readClose")
+		defer rc.Close()
 	}
 
 	peer, ok := s.peers[from]
@@ -231,7 +237,7 @@ func (s *FileServer) handleMessageGetFile(from string, msg MessageGetFile) error
 	// First send the "incomingStream" byte to the peer and than we can send
 	// the file size as an int64.
 	peer.Send([]byte{p2p.IncomingStream})
-	var fileSize int64 = 22
+
 	binary.Write(peer, binary.LittleEndian, fileSize)
 	n, err := io.Copy(peer, r)
 	if err != nil {
