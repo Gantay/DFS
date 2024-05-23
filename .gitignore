@@ -6,7 +6,7 @@
 
 # Ignore temporary files
 *.tmp
-
+*_network/
 
 myspecialpicture/*
 .vscode
